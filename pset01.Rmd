@@ -1,0 +1,258 @@
+---
+title: "Problem Set 1"
+subtitle: "Stat 160, Week 1"
+author: "Linh Vu"
+output: pdf_document
+---
+
+## Due: February 1st at noon on Gradescope
+
+In this problem set, you will practice
+
+1. Identifying a simple random sample (in a real-world survey) and when simple random samples are an appropriate sampling design.
+1. Articulating nonsampling errors in the US Census form.
+1. Reading survey documentation to identify important features.
+1. Conducting a simulation study to understand the limitations of the `sample()` function.
+
+### Add any collaborators here!
+
+I collaborated with Victoria and Gulirano.
+
+**Remember that you are not allowed to use any generative AI models (like ChatGPT) on your p-set.**
+
+## Packages
+
+Load any necessary `R` packages in the chunk below.
+
+```{r}
+library(tidyverse)
+```
+
+
+## Problems
+
+### Problem 0: Stat 160 Background Questionnaire
+
+Please fill out [this form](https://forms.gle/xEVTMuxq25Pcy12GA) to help us better understand your background knowledge and experiences.  This form will help us tailor the course and understand when we need to provide additional resources and support.
+
+### Problem 1: Simple Random Sampling in the Wild
+
+
+a.  Try to find a study or poll that used only simple random sampling (no clustering or stratification) to select their sample.  Provide a link to the study or an article about the study here.
+
+Title: Determinants of Hepatitis A Infection among Students: A Case Study of an Outbreak in Jember, Indonesia
+Link: https://journals.sagepub.com/doi/epub/10.4081/jphr.2021.2309
+
+b.  Identify the target population and the sample population and discuss whether or not you think there could be over- or under-coverage error.
+
+This is a case study about a school in Jember, Indonesia. The target population is all students at SMAN Plus Sukowono students, and the sample population is also all SMAN Plus Sukowono students. Since the target population and the sample population are the same, there is no over- or under-coverage error.
+
+c.  Address whether or not you think a simple random sample was reasonable for this study.
+
+A simple random sample was reasonable for this study because the sampling population is small enough that it is feasible to carry out, and because it produces a representative sample of the entire school population. 
+
+
+### Problem 2: Survey At a Glance
+
+For this problem, we want you to spend some time looking at the documentation and survey weights for a real-world survey.  
+
+a. Head over to the website for the US Bureau of Labor Statistics' Consumer Expenditure Survey and fill in the following information.  Provide roughly the same detail of information as was provided on the NHANES hand-out. 
+
+**Sponsor**: Bureau of Labor Statistics
+
+**Purpose**:  Gain insight on how US consumers spend their money. Users of the dataset can learn more about the characteristics of different demographic groups (such as their spending habits, living standards, demand for certain goods/services, etc.). The dataset also allows the government to calculate weights for the Consumer Price Index
+
+**Years**: Annual. BLS started conducting this survey in 1972-73.
+
+**Target Population**: All US households
+
+**Sampling Frame**: 2 sampling frames. One is the Census Bureau's master address file, which contains residential addresses in the 2010 census and accounts for 99% of addresses in the survey. The other sampling frame is the group quarters frame, which contains addresses of group living arrangements (such as college dorms or retirement homes).
+
+**Sample Design**: First draw primary sampling units (PSUs) for the 2 surveys and then draw a random sample of households within each sampling unit. PSUs are small clusters of counties.
+
+**Sample Size**: 20,000 independent interview surveys and 11,000 independent diary surveys for each year
+
+**Mode of Administration**: Interview for the interview surveys and paper or online form for the diary surveys
+
+**Website**: www.bls.gov/opub/hom/cex/home.htm
+
+b. We went to the CE website and downloaded the 2023, Quarter 1 (January, February, March) family data file for the Interview Survey. BLS provides the data dictionary [here](https://www.bls.gov/cex/pumd/ce-pumd-interview-diary-dictionary.xlsx).  Run the following code to load these data. (To shrink the file size, we have only provided the first 150 variables in the dataset.)
+
+
+
+```{r}
+fmli231_subset <- read_csv("data/fmli231_subset.csv")
+```
+
+
+We want you to spend some time familiarizing yourself with the CE survey weight variable.  Complete the following tasks:
+
+* Determine which variable in the dataset represents the survey weight.
+
+\textcolor{blue}{The variable that represents the survey weight is FINLWT21.}
+
+* Conduct an exploratory analysis of this variable.  Make sure to include at least one graph, five summary statistics, and two conclusions.
+
+\textcolor{blue}{The distribution of the survey weights is heavily right-skewed with a few outliers to the right. This means that there are some people that represent particularly large chunks of the population. Moreover, the household with the smallest weight represents 1,334 US households, and the household with the largest weight represents 117,760 US households.}
+
+```{r 2b.1}
+hist(fmli231_subset$FINLWT21)
+
+summary(fmli231_subset$FINLWT21)
+sum(fmli231_subset$FINLWT21)
+sd(fmli231_subset$FINLWT21)
+```
+
+
+* Determine what the sum of the survey weights equals.  What is that value estimating?
+
+\textcolor{blue}{The sum of the survey weights is 134,468,041. This value is estimating the total number of households in the population (in other words, the total number of households in the US).}
+
+* Interpret what the average value of the survey weights means in context.
+
+\textcolor{blue}{The average value of survey weights means that on average, one sampled household in the dataset represents 27,973 households in the population.}
+
+* Both region (REGION) and whether or not a household is in a urban setting (BLS URBN) are used (along with other variables) in the complex sample design.  Create a graph that includes the survey weight variable and these two design variables.  Use this graph to make an argument for which groups appear to be over-sampled and under-sampled in the sample data. (Use the data dictionary to determine what each category of these variables represents.)
+
+\textcolor{blue}{For BLS URBN, 1 represents urban and 2 represents rural. For REGION, 1 represents Northeast, 2 represents Midwest, 3 represents South, 4 represents West, 5 represents Outside SMSA, and 6 represents Suppressed. Groups that appear at the bottom of the graph are over-sampled, since they have small weights, which mean they represent a small number of US households, and vice versa. Thus, over-sampled groups are rural areas in the Northeast and the West, and under-sampled groups are rural areas in the South and Midwest.}
+
+```{r 2b.2}
+ggplot(fmli231_subset, aes(as.factor(REGION), FINLWT21, fill=as.factor(BLS_URBN))) +
+  geom_boxplot()
+```
+
+
+
+
+
+### Problem 3: Nonsampling Errors
+
+Read the article ["An American Puzzle: Fitting Race in a Box"](https://www.nytimes.com/interactive/2023/10/16/us/census-race-ethnicity.html).  In the day 1 lecture, we discussed different forms of error that can occur in survey statistics.  These errors turn into bias when there are systematic differences between truth and what is observed.  In this problem you will consider potential issues related to measurement bias and nonresponse bias in the race and ethnicity questions of the US Census.
+
+Notes: 
+
+1. All Harvard students are given a free account to the New York Times.  Access information can be found [here](https://library.harvard.edu/services-tools/new-york-times).
+2. The recommended reading of Chapter 1 from Lohr will also help with this problem.
+
+
+a. Given the challenges of creating race and ethnicity categories for the US Census, one might consider converting to an open question that allows respondents to provide their own category.  Provide a statistical argument for why an open question might be preferable.  But then also provide a different statistical argument for why a closed question might be preferable.
+
+\textcolor{blue}{An open question might help avoid measurement error, which can happen when people self-identify into categories that are not standardized. It would be hard to analyze the data when people have different definitions of race/ethnicity categories (they might put nationality or joke answers like "human").}
+
+\textcolor{blue}{On the other hand, the open question might be too limiting, forcing people to answer with categories that they don't fully agree with. Some people might end up defaulting to one option that they agree with (eg. if someone is mixed, they might choose the more dominant/common ethnicity). This issue might lead to certain ethnicities being over-represented/over-counted.}
+
+b. How might the proposed ordering of the new race/ethnicity question lead to measurement bias?
+
+\textcolor{blue}{The proposed ordering of the new question might make Hispanic/Latinx people answer the question differently than before. Some people might check multiple ethnicity boxes, while others might check just one Hispanic box, even if they have the same racial background. This is a type of measurement bias because we expect those people to check the same boxes but they might not.}
+
+c. Identify a potential measurement error issue for the race or ethnicity questions on any of the presented US Census forms.  (A copy of these questions can be found at the end of the article.)
+
+\textcolor{blue}{Since the present census form has the Spanish/Hispanic/Latino origin and race questions separately, some Hispanic people might feel forced to check a box for the race question, even if they don't necessarily identify with that race. This is a measurement error issue because respondents are interpreting the question differently and thus not answering truthfully/consistently.}
+
+d. Look at the questions asked on the 2000 Census, which saw higher rates of nonresponse to the race question (Question 6) and explain how nonresponse bias might be present in the 2000 data.
+
+\textcolor{blue}{The nonresponse bias might be present in the 2000 data when people of Hispanic origin don't identify with any racial group and leave this question blank, while non-Hispanic people are more likely to identify with any/some of the racial groups and can answer this question. There might be discrepancy in response rates between Hispanic and non-Hispanic people.}
+
+e. What is something you learned from reading the article that surprised you? How does this reading underscore the idea that "data are not neutral". (*Note*: If you have not encountered this phrasing before, check out [this article](https://www.theguardian.com/technology/2020/mar/21/catherine-dignazio-data-is-never-a-raw-truthful-input-and-it-is-never-neutral))
+
+\textcolor{blue}{I'm surprised to learn about the (political) process of how different ethnic/racial groups started to appear on the census. This reading highlights the idea that "data are not neutral" because choosing answer options in a demographic survey is inherently political: whether to include a nonbinary gender option is heavily debated (different politically-inclined people have different thoughts on this issue), and whether to include MENA group is also political (seeing the decline in number of people who identify as White in the survey might add to the growing tension between certain racial groups.)}
+
+
+
+### Problem 4: Sampling with the `sample()` Function
+
+As we discussed in lecture, statisticians often conduct simulation studies to empirically study the properties of an estimator.  Here, we actually want you to conduct a simulation study to explore the (mis-)behavior of the `sample()` function for unequal probability sampling.  If you have never written a `for()` loop in `R`, you should check out the for loops primer and come by office hours for support.
+
+Run the code below where we generate a fake population of interest that you will use in your study.
+
+```{r 4}
+# Set the random number generator
+set.seed(999)
+
+# Population size
+N <- 10000
+
+# Label each population unit
+index <- 1:N
+
+# Generate variable of interest
+y <- round(10*rgamma(n = N, shape = 0.2, scale = 4) + 100)
+
+# Generate additional variable that is correlated with y
+# Will use x to create the inclusion probabilities
+x <- abs(y^1.75 + rnorm(n = N, mean = 0, sd = 60))
+
+# Sample size
+n <- 1000
+
+# Inclusion probabilities
+pi <- pmin(x/(sum(x))*n, 1)
+
+# Explore the range of the inclusion probabilities
+summary(pi)
+
+# In case you want the population in a data frame
+population <- data.frame(index, y, x, pi)
+```
+
+
+
+a. First conduct a simulation study to verify that the Horvitz-Thompson estimator is an unbiased estimator of the population mean under simple random sampling without replacement (so ignore `pi`).  Use a sample size of 1000 and take 5000 Monte Carlo samples.  Make sure to use the `sample()` function.
+
+\textcolor{blue}{The bias is essentially 0, so the Horvitz-Thompson estimator is an unbiased estimator of the population mean under SRS without replacement.}
+
+
+```{r 4a}
+ht_estimator <- c()
+
+# generate samples
+for(i in 1:5000){
+ ht_estimator[i] <- mean(sample(y, n, replace=F)) 
+}
+
+# calculate horvitz-thompson estimator and bias
+mean(ht_estimator) - mean(y)
+```
+
+
+b. Repeat your simulation study from (a) but this time use the `pi` vector to take unequal probability samples.  In theory, this can be achieved via the `prob` argument in `sample()`.  In this version of your simulation, 
+
+* Track which units are sampled for each iteration.
+* After the `for()` loop, compute the bias of the Horvitz-Thompson estimator and the proportion of times each unit was sampled.
+* Construct a graph that compares the true inclusion probabilities with the empirical inclusion probabilities. Describe what you learned about the `sample()` function.  (Luckily, there are `R` packages that can handle unequal probability sampling!)
+
+\textcolor{blue}{This time, we see that the Horvitz-Thompson estimator seems to have a larger bias. This result is because the sample function in base R undersamples does not behave exactly as we expect. At low inclusion probabilities, the sample function samples units at rates close to the empirical rates, but at high inclusion probabiilites, the function samples units at rates lower than the empirical rates. Therefore, in this simulation, our samples include unlikely values more frequently, leading to a biased estimator.}
+
+```{r 4b}
+
+ht_estimator_b <- c()
+all_index <- c()
+
+# generate samples
+for(i in 1:5000){
+  
+  # indexes of sampled units
+  index <- sample(1:N, n, replace=F, prob=pi) 
+  
+  # calculate sample mean
+  ht_estimator_b[i] <- sum(y[index]/pi[index])/N
+  
+  all_index <- c(all_index, index)
+
+}
+
+# calculate horvitz-thompson estimator and bias
+mean(ht_estimator_b) - mean(y)
+
+# proportion of times of being sampled
+all <- data.frame(all_index)
+table <- count(all, all_index)
+table <- table %>% 
+  mutate(prop = n/5000)
+
+# construct graph
+plot(pi, table$prop, xlab="empirical", ylab="true", main="inclusion probabilities") +
+  abline(0,1)
+```
+
+

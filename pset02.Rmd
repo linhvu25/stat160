@@ -1,0 +1,207 @@
+---
+title: "Problem Set 2"
+subtitle: "Stat 160, Week 2"
+author: "Linh Vu"
+output: pdf_document
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Due: February 8th at noon on Gradescope
+
+In this problem set, you will practice
+
+1.  Evaluating sampling designs, both mathematically and computationally.
+1.  Engaging with other probability sampling designs beyond simple random sampling.
+1.  Considering coverage error issues for sampling small groups.
+
+### Add any collaborators here!
+
+I collaborated with Gulirano
+
+**Remember that you are not allowed to use any generative AI models (like ChatGPT) on your p-set.**
+
+## Packages
+
+Load any necessary `R` packages in the chunk below.
+
+```{r}
+
+```
+
+## Problems
+
+Feel free to write out any mathematical derivations (instead of typing them out via Latex code).  If you write out your answers for the mathematical components, take a picture of your work and append it to your p-set's pdf when you turn it in on Gradescope.
+
+### Problem 1: Which Design is Most Efficient?
+
+Let's return to our toy example from the Day 2 lecture to study the performance of the Horvitz-Thompson estimator under two more sampling designs: systematic sampling and Bernoulli sampling.
+
+Recap of the set-up: You have 4 friends and you plan to take a sample to estimate the total hours they spent listening to music yesterday. Here are the data:
+
+| Index   | Concentration   | Hours of Music   |
+|---------|-----------------|------------------|
+| 1       | statistics      | 1                |
+| 2       | statistics      | 3                |
+| 3       | statistics      | 5                |
+| 4       | government      | 15               |
+| ------ | -------------- | --------------- |
+| Known   | Known           | Unknown          |
+
+a.  Find all possible systematic samples of size 2 (without shuffling the order of the index/list) and fill in the following table. To compute $\hat{t}_{ys}$, the Horvitz-Thompson estimator for a given sample, make sure to first determine $\pi_i$ for $i = 1, 2, 3, 4$.
+
+
+
+| Sampled indices | $p(s)$ | $\hat{t}_{ys}$ |
+|-----------------|--------|----------------|
+|            |    |             |
+|            |    |             |
+
+b. Use the table information from (a) to compute the bias and variance of the estimator under the systematic sampling design.  Because you have found every possible sample, you should use the formulae that rely on $p(s)$ directly, (not the sample membership indicator, $I_i$).
+
+How does the bias and variance compare to the estimator under simple random sampling?  Provide intuition for any differences you observe.
+
+
+
+c. Let' now introduce Bernoulli sampling.  Under this design, the probability of selecting any element is equal to some constant, $\pi$, where $0 < \pi < 1$ and the selection of each element is independent of another element's selection.  For a given sample $s$, the sample size $n_s$ is random and 
+
+\begin{align*}
+p(s) = \pi^{n_s} (1 - \pi)^{N - n_s}
+\end{align*}
+
+where $N$ = the population size.  Although the sample size is random, $E(n_s) = N\pi$.  For our example, let's set $E(n_s) = 2$.  Find all possible Bernoulli samples and fill in the following table.  To compute $\hat{t}_{ys}$, the Horvitz-Thompson estimator for a given sample, make sure to first determine $\pi$.
+
+
+
+| Sampled indices | $p(s)$ | $\hat{t}_{ys}$ |
+|-----------------|--------|----------------|
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+|             |     |              |
+
+d. Use the table information from (c) to compute the bias and variance of the estimator under the Bernoulli sampling design.  How does the bias and variance compare to the estimator under simple random sampling?  Provide intuition for any differences you observe.
+
+
+
+### Problem 2: Deeper Dive into Bernoulli Sampling
+
+In Problem 1, you used our toy example to compare the variance of the Horvitz-Thompson estimator under different sampling designs.  Now we want you to derive the variance of the Horvitz-Thompson estimator of $t_y$ under Bernoulli sampling.
+
+
+a. Derive the variance of the Horvitz-Thompson estimator of $t_y$ under Bernoulli sampling and start from the general equation of
+
+\begin{align*}
+\mbox{Var}(\hat{t}_y) = \underset{i, j \in U}{\sum \sum} \frac{\pi_{ij} - \pi_i \pi_j}{\pi_i \pi_j} y_i y_j.
+\end{align*}
+
+
+
+
+
+b. Compare your derived variance under Bernoulli sampling to the variance formula under simple random sampling and argue why one will tend to be larger than the other.  In your discussion, let the Bernoulli sampling probability be $\pi = nN^{-1}$. 
+
+
+
+
+### Problem 3: The Impact of Ordering on Systematic Sampling
+
+Let's return to the simulation study set-up from P-Set 1 but instead of sampling proportional to the auxiliary variable, $x$, let's take a systematic sample of the data after its been ordered by $x$.  In particular, conduct a simiulation study where you explore the following three sampling designs (all with sample size of 200):
+
+a. Simple random sampling.
+b. Systematic sampling on the unordered data.
+c. Systematic sampling on the ordered data where you order the data based on the value of $x$.
+
+For each iteration and each design, compute the Horvitz-Thompson estimator of the mean of $y$.  Then, compare the empirical variance, design effect, and effective sample size of the estimators.  In your answer, make sure to address the impact of ordering on the auxiliary variable $x$.  
+
+Note: The empirical variance is given by
+
+$$
+\mbox{Var}(\hat{\mu}_y) = \frac{1}{B-1}\sum_{b=1}^B (\hat{\mu}_y^{(b)} - E(\hat{\mu}_y^{(b)}))^2
+$$
+
+where $B$ is the number of iterations, $\hat{\mu}_y^{(b)}$ is the estimated value for iteration $b$ and 
+
+$$
+\mbox{E}(\hat{\mu}_y) = \frac{1}{B}\sum_{b=1}^B \hat{\mu}_y^{(b)}.
+$$
+
+
+
+```{r}
+# Simulated Population
+# Adjusting set-up slightly from P-Set 1
+
+# Set the random number generator
+set.seed(9999)
+
+# Population size
+N <- 10000
+
+# Label each population unit
+index <- 1:N
+
+# Generate variable of interest
+y <- round(10*rgamma(n = N, shape = 0.2, scale = 4) + 100)
+
+# Generate additional variable that is correlated with y
+# Will use x to create the inclusion probabilities
+x <- abs(y + rnorm(n = N, mean = 0, sd = 15))
+
+# In case you want the population in a data frame
+population <- data.frame(index, y, x)
+```
+
+```{r}
+
+```
+
+
+
+
+
+### Problem 4: Sampling Libraries
+
+The Institute of Museum and Library Services, in collaboration with the US Census Bureau, collects data on all public libraries.  Because they collect data on all libraries, it is a census dataset (or nearly census as they have a 97% response rate).  Let's use these data to engage with the `survey()` package.
+
+```{r}
+libraries <- readr::read_csv("data/public_libraries.csv")
+```
+
+a. Take a simple random sample of 250 libraries.
+
+```{r}
+
+```
+
+b.  Use the `survey` package to estimate the mean number of people each library offers services to (`popu_lsa`).
+
+```{r}
+
+```
+
+c. When you first start using a new `R` package, it is a good idea to check that the functions in the package are computing what you want them to compute.  Verify that the `svymean()` function is computing the Horvitz-Thompson estimator and variance estimator for the mean under simple random sampling that we derived in class.  Do this by coding up the formulae yourself and comparing them to your solution in (b).  Note: The standard error of an estimator is the square root of the estimated variance.  
+
+```{r}
+
+```
+
+
+
+### Problem 5:  Sampling Small Sub-Populations
+
+Simple random sampling is great for producing a sample that is representative of the overall population.  However, that simple random sample likely doesn't have enough observations from small sub-populations for one to be able to draw sound conclusions about those sub-populations.  Read the Pew Research Center article entitled ["When surveying small populations, some approaches are more inclusive than others"](https://www.pewresearch.org/short-reads/2023/05/08/when-surveying-small-populations-some-approaches-are-more-inclusive-than-others/) and write a short reflection (~6-10 sentences) on what you learned about sampling small groups.  In your write-up, make sure to compare the methods presented in terms of coverage error.
